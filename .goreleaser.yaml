@@ -19,20 +19,20 @@ builds:
       - v3
     main: ./cmd
 
-  # - id: clickhouse_udf
-  #   env:
-  #     - CGO_ENABLED=0
-  #   goos:
-  #     - linux
-  #     - darwin
-  #   goarch:
-  #     - amd64
-  #     - arm64
-  #   goamd64:
-  #     - v1
-  #     - v3
-  #   main: ./cmd
-  #   binary: /var/lib/clickhouse/user_scripts/icepq
+  - id: clickhouse_udf
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    goamd64:
+      - v1
+      - v3
+    main: ./cmd
+    binary: /var/lib/clickhouse/user_scripts/icepq
 
 archives:
   - id: cli
@@ -41,15 +41,15 @@ archives:
     format: binary
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{.Os}}_{{.Arch}}{{ with .Amd64 }}_{{ . }}{{ end }}"
 
-  # - id: clickhouse_udf
-  #   builds:
-  #     - clickhouse_udf
-  #   format: tar.gz
-  #   name_template: "{{ .ProjectName }}_clickhouse_udf_bundle_{{ .Version }}_{{.Os}}_{{.Arch}}{{ with .Amd64 }}_{{ . }}{{ end }}"
-  #   files:
-  #     - src: "config/*.*ml"
-  #       dst: /etc/clickhouse-server/
-  #       strip_parent: true
+  - id: clickhouse_udf
+    builds:
+      - clickhouse_udf
+    format: tar.gz
+    name_template: "{{ .ProjectName }}_clickhouse_udf_bundle_{{ .Version }}_{{.Os}}_{{.Arch}}{{ with .Amd64 }}_{{ . }}{{ end }}"
+    files:
+      - src: "config/*.*ml"
+        dst: /etc/clickhouse-server/
+        strip_parent: true
 
 changelog:
   sort: asc
