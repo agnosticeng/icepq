@@ -1,0 +1,6 @@
+.envrc
+bin
+tmp
+examples/data
+.DS_Store
+dist

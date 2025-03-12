@@ -1,0 +1,23 @@
+<functions>
+    <function>
+        <name>icepq_append</name>
+        <type>executable</type>
+        <format>Native</format>
+        <stderr_reaction>log</stderr_reaction>
+        <command>icepq clickhouse function append</command>
+        <max_command_execution_time>300</max_command_execution_time>
+        <command_read_timeout>180000</command_read_timeout>
+        <command_write_timeout>60000</command_write_timeout>
+
+        <argument>
+            <name>table_location</name>
+            <type>String</type>
+        </argument>
+        <argument>
+            <name>files</name>
+            <type>Array(String)</type>
+        </argument>
+
+        <return_type>String</return_type>
+    </function>
+</functions>

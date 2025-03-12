@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  clickhouse-server:
+    image: clickhouse/clickhouse-server:24.12 
+    restart: always
+    ports: 
+      - '127.0.0.1:9000:9000'
+      - '127.0.0.1:8123:8123'
+
+  minio:
+    image: minio/minio:latest
+    restart: always
+    command: ['server', '/data', '--address', ':9001', '--console-address', ':9002']    
+    ports:
+      - '9001:9001'
+      - '9002:9002' 
+    environment:
+      - MINIO_ROOT_USER=minio
+      - MINIO_ROOT_PASSWORD=minio123
+
+  minio-bootstrap:
+    image: minio/mc
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc alias set local http://minio:9001 minio minio123;
+      /usr/bin/mc mb local/test01;
+      exit 0;
+      "
