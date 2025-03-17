@@ -9,13 +9,14 @@ require (
 	github.com/agnosticeng/objstr v0.1.3
 	github.com/agnosticeng/panicsafe v0.5.0
 	github.com/agnosticeng/slogcli v0.1.1
+	github.com/apache/arrow-go/v18 v18.1.1-0.20250226170053-efecae3596e6
 	github.com/apache/iceberg-go v0.1.1-0.20250309214139-16e6b69db76b
 	github.com/google/uuid v1.6.0
 	github.com/hamba/avro/v2 v2.28.0
-	github.com/parquet-go/parquet-go v0.24.0
 	github.com/samber/lo v1.49.1
 	github.com/sourcegraph/conc v0.3.0
 	github.com/urfave/cli/v2 v2.27.5
+	github.com/veqryn/slog-context v0.7.0
 	gocloud.dev v0.40.0
 )
 
@@ -38,8 +39,6 @@ require (
 	github.com/agnosticeng/mapstructure-hooks v0.3.0 // indirect
 	github.com/andybalholm/brotli v1.1.1 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.1 // indirect
-	github.com/apache/arrow-go/v18 v18.1.1-0.20250226170053-efecae3596e6 // indirect
-	github.com/apache/arrow/go/v17 v17.0.0 // indirect
 	github.com/apache/thrift v0.21.0 // indirect
 	github.com/aws/aws-sdk-go v1.55.6 // indirect
 	github.com/aws/aws-sdk-go-v2 v1.36.3 // indirect
@@ -96,19 +95,16 @@ require (
 	github.com/kr/fs v0.1.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/mattn/go-runewidth v0.0.16 // indirect
 	github.com/minio/asm2plan9s v0.0.0-20200509001527-cdd76441f9d8 // indirect
 	github.com/minio/c2goasm v0.0.0-20190812172519-36a3d3bbc4f3 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
-	github.com/olekukonko/tablewriter v0.0.5 // indirect
 	github.com/pierrec/lz4/v4 v4.1.22 // indirect
 	github.com/pkg/sftp v1.13.7 // indirect
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/redis/rueidis v1.0.55 // indirect
-	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/segmentio/asm v1.2.0 // indirect
 	github.com/spf13/afero v1.12.0 // indirect
@@ -117,7 +113,6 @@ require (
 	github.com/substrait-io/substrait v0.66.1-0.20250205013839-a30b3e2d7ec6 // indirect
 	github.com/substrait-io/substrait-go/v3 v3.9.0 // indirect
 	github.com/twmb/murmur3 v1.1.8 // indirect
-	github.com/veqryn/slog-context v0.7.0 // indirect
 	github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1 // indirect
 	github.com/zeebo/xxh3 v1.0.2 // indirect
 	go.opencensus.io v0.24.0 // indirect
