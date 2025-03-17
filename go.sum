@@ -58,6 +58,8 @@ github.com/antlr4-go/antlr/v4 v4.13.1 h1:SqQKkuVZ+zWkMMNkjy5FZe5mr5WURWnlpmOuzYW
 github.com/antlr4-go/antlr/v4 v4.13.1/go.mod h1:GKmUxMtwp6ZgGwZSva4eWPC5mS6vUAmOABFgjdkM7Nw=
 github.com/apache/arrow-go/v18 v18.1.1-0.20250226170053-efecae3596e6 h1:RWgwATcu+8ZR65fmb/esaQkQqoCBhiRnB6WPMfAxJOs=
 github.com/apache/arrow-go/v18 v18.1.1-0.20250226170053-efecae3596e6/go.mod h1:ev6qDk3+bf7eh/goQbjA4ZViRDhu+9pmad8YTLvupIg=
+github.com/apache/arrow/go/v17 v17.0.0 h1:RRR2bdqKcdbss9Gxy2NS/hK8i4LDMh23L6BbkN5+F54=
+github.com/apache/arrow/go/v17 v17.0.0/go.mod h1:jR7QHkODl15PfYyjM2nU+yTLScZ/qfj7OSUZmJ8putc=
 github.com/apache/iceberg-go v0.1.1-0.20250309214139-16e6b69db76b h1:IWMntUU9xfp/J4HS4X2lb/5MJ12rQkjDRHPM1aIGSEU=
 github.com/apache/iceberg-go v0.1.1-0.20250309214139-16e6b69db76b/go.mod h1:NVtnygLSqxXLGNEmOTska8WHy/7Lr8hwI2nEyOzrttQ=
 github.com/apache/thrift v0.21.0 h1:tdPmh/ptjE1IJnhbhrcl2++TauVjy242rkV/UzJChnE=

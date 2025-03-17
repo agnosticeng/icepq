@@ -1,1 +1,2 @@
 pyiceberg[pyarrow,sql-sqlite]
+parquet-cli

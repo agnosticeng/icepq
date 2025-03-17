@@ -6,10 +6,11 @@ import (
 	"net/url"
 
 	ice "github.com/agnosticeng/icepq/internal/iceberg"
-	"github.com/agnosticeng/icepq/internal/io"
-	"github.com/agnosticeng/objstr"
+	"github.com/apache/iceberg-go/table"
 	"github.com/samber/lo"
+	"github.com/sourcegraph/conc/iter"
 	"github.com/urfave/cli/v2"
+	slogctx "github.com/veqryn/slog-context"
 	_ "gocloud.dev/blob/s3blob"
 )
 
@@ -34,11 +35,7 @@ func Command() *cli.Command {
 		Name:  "files",
 		Usage: "files <location>",
 		Action: func(ctx *cli.Context) error {
-			var (
-				os  = objstr.FromContextOrDefault(ctx.Context)
-				fs  = io.NewObjectStorageAdapter(os)
-				res []snapshotInfo
-			)
+			var logger = slogctx.FromCtx(ctx.Context)
 
 			location, err := url.Parse(ctx.Args().Get(0))
 
@@ -52,39 +49,37 @@ func Command() *cli.Command {
 				return err
 			}
 
-			for _, md := range mds {
-				if md.CurrentSnapshot() == nil {
-					continue
+			logger.Debug("metadata listing finished", "count", len(mds))
+
+			var m = iter.Mapper[table.Metadata, *snapshotInfo]{
+				MaxGoroutines: 100,
+			}
+
+			res, err := m.MapErr(mds, func(md *table.Metadata) (*snapshotInfo, error) {
+				var snap = (*md).CurrentSnapshot()
+
+				if snap == nil {
+					return nil, nil
 				}
 
 				var snapInfo = snapshotInfo{
-					Path:           md.CurrentSnapshot().ManifestList,
-					SequenceNumber: md.CurrentSnapshot().SequenceNumber,
-					SnapshotId:     md.CurrentSnapshot().SnapshotID,
+					Path:           snap.ManifestList,
+					SequenceNumber: snap.SequenceNumber,
+					SnapshotId:     snap.SnapshotID,
 				}
 
-				if md.CurrentSnapshot() == nil {
-					continue
-				}
-
-				manFiles, err := ice.ReadManifestList(ctx.Context, lo.Must(url.Parse(md.CurrentSnapshot().ManifestList)))
+				manFiles, err := ice.FetchManifestsWithEntries(ctx.Context, lo.Must(url.Parse(snap.ManifestList)))
 
 				if err != nil {
-					return err
+					return nil, err
 				}
 
 				for _, manFile := range manFiles {
 					var manInfo = manifestInfo{
-						Path: manFile.FilePath(),
+						Path: manFile.Manifest.FilePath(),
 					}
 
-					entries, err := manFile.FetchEntries(fs, false)
-
-					if err != nil {
-						return err
-					}
-
-					for _, entry := range entries {
+					for _, entry := range manFile.Entries {
 						manInfo.DataFiles = append(manInfo.DataFiles, dataFileInfo{
 							Path: entry.DataFile().FilePath(),
 						})
@@ -93,8 +88,9 @@ func Command() *cli.Command {
 					snapInfo.Manifests = append(snapInfo.Manifests, manInfo)
 				}
 
-				res = append(res, snapInfo)
-			}
+				fmt.Println("snap", snapInfo.Path)
+				return &snapInfo, nil
+			})
 
 			js, _ := json.MarshalIndent(res, "", "    ")
 			fmt.Println(string(js))

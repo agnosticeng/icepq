@@ -4,16 +4,17 @@ import (
 	"context"
 	"net/url"
 
+	"github.com/agnosticeng/icepq/internal/io"
 	"github.com/agnosticeng/objstr"
 	"github.com/agnosticeng/objstr/types"
+	"github.com/apache/arrow-go/v18/parquet/file"
+	"github.com/apache/arrow-go/v18/parquet/metadata"
 	"github.com/apache/iceberg-go"
-	"github.com/parquet-go/parquet-go"
 )
 
 type File struct {
-	r types.ReaderAt
+	r *file.Reader
 	o *types.Object
-	*parquet.File
 }
 
 func (f *File) URL() *url.URL {
@@ -41,16 +42,15 @@ func OpenFile(ctx context.Context, u *url.URL) (File, error) {
 
 	defer r.Close()
 
-	f, err := parquet.OpenFile(r, int64(md.Size))
+	pqr, err := file.NewParquetReader(io.NewReadSeekerAdapter(r, int64(md.Size)))
 
 	if err != nil {
 		return File{}, err
 	}
 
 	return File{
-		r:    r,
-		o:    &types.Object{URL: u, Metadata: md},
-		File: f,
+		r: pqr,
+		o: &types.Object{URL: u, Metadata: md},
 	}, nil
 }
 
@@ -63,19 +63,19 @@ func OpenObject(ctx context.Context, o *types.Object) (File, error) {
 		return File{}, err
 	}
 
-	defer r.Close()
-
-	f, err := parquet.OpenFile(r, int64(o.Metadata.Size))
+	pqr, err := file.NewParquetReader(io.NewReadSeekerAdapter(r, int64(o.Metadata.Size)))
 
 	if err != nil {
 		return File{}, err
 	}
-
 	return File{
-		r:    r,
-		o:    o,
-		File: f,
+		r: pqr,
+		o: o,
 	}, nil
+}
+
+func (f *File) Metadata() *metadata.FileMetaData {
+	return f.r.MetaData()
 }
 
 func NewIcegergDataFile(f File) (iceberg.DataFile, error) {
@@ -84,8 +84,8 @@ func NewIcegergDataFile(f File) (iceberg.DataFile, error) {
 		f.URL().String(),
 		iceberg.ParquetFile,
 		nil,
-		f.NumRows(),
-		int64(f.Size()),
+		f.r.NumRows(),
+		int64(f.o.Metadata.Size),
 	)
 
 	if err != nil {

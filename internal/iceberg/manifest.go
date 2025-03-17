@@ -4,8 +4,10 @@ import (
 	"context"
 	"net/url"
 
+	"github.com/agnosticeng/icepq/internal/io"
 	"github.com/agnosticeng/objstr"
 	"github.com/apache/iceberg-go"
+	"github.com/sourcegraph/conc/iter"
 )
 
 func WriteManifest(
@@ -91,4 +93,32 @@ func ReadManifestList(ctx context.Context, path *url.URL) ([]iceberg.ManifestFil
 	}
 
 	return iceberg.ReadManifestList(r)
+}
+
+type ManifestWithEntries struct {
+	Manifest iceberg.ManifestFile
+	Entries  []iceberg.ManifestEntry
+}
+
+func FetchManifestsWithEntries(ctx context.Context, manifestList *url.URL) ([]ManifestWithEntries, error) {
+	var fs = io.NewObjectStorageAdapter(objstr.FromContext(ctx))
+
+	manFiles, err := ReadManifestList(ctx, manifestList)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return iter.MapErr(manFiles, func(manFile *iceberg.ManifestFile) (ManifestWithEntries, error) {
+		entries, err := (*manFile).FetchEntries(fs, false)
+
+		if err != nil {
+			return ManifestWithEntries{}, err
+		}
+
+		return ManifestWithEntries{
+			Manifest: *manFile,
+			Entries:  entries,
+		}, nil
+	})
 }

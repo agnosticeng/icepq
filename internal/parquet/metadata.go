@@ -4,12 +4,13 @@ import (
 	"context"
 	"net/url"
 
+	"github.com/agnosticeng/icepq/internal/io"
 	"github.com/agnosticeng/objstr"
-	"github.com/parquet-go/parquet-go"
-	"github.com/parquet-go/parquet-go/format"
+	"github.com/apache/arrow-go/v18/parquet/file"
+	"github.com/apache/arrow-go/v18/parquet/metadata"
 )
 
-func FetchMetadata(ctx context.Context, u *url.URL, size int) (*format.FileMetaData, error) {
+func FetchMetadata(ctx context.Context, u *url.URL, size int) (*metadata.FileMetaData, error) {
 	var os = objstr.FromContextOrDefault(ctx)
 
 	r, err := os.ReaderAt(ctx, u)
@@ -20,11 +21,11 @@ func FetchMetadata(ctx context.Context, u *url.URL, size int) (*format.FileMetaD
 
 	defer r.Close()
 
-	f, err := parquet.OpenFile(r, int64(size))
+	f, err := file.NewParquetReader(io.NewReadSeekerAdapter(r, int64(size)))
 
 	if err != nil {
 		return nil, err
 	}
 
-	return f.Metadata(), nil
+	return f.MetaData(), nil
 }
