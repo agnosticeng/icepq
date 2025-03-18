@@ -163,7 +163,7 @@ func getPrimitiveType(n *schema.PrimitiveNode) (iceberg.Type, error) {
 		return iceberg.Int32Type{}, nil
 	// INT64
 	case 2:
-		return iceberg.Int32Type{}, nil
+		return iceberg.Int64Type{}, nil
 	// FLOAT
 	case 4:
 		return iceberg.Float32Type{}, nil

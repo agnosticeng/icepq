@@ -81,7 +81,7 @@ func AppendToTable(
 	if !lo.EveryBy(schemas, func(sch *iceberg.Schema) bool {
 		return md.CurrentSchema().Equals(sch)
 	}) {
-		return fmt.Errorf("not all provided Parquet files have the same schema")
+		return fmt.Errorf("incompatible schema")
 	}
 
 	dfs, err := iter.MapErr(files, func(f *pq.File) (iceberg.DataFile, error) {
