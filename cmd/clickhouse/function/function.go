@@ -2,7 +2,7 @@ package function
 
 import (
 	"github.com/agnosticeng/icepq/cmd/clickhouse/function/append"
-	"github.com/agnosticeng/icepq/cmd/clickhouse/function/merge"
+	"github.com/agnosticeng/icepq/cmd/clickhouse/function/replace"
 	"github.com/urfave/cli/v2"
 )
 
@@ -11,7 +11,7 @@ func Command() *cli.Command {
 		Name: "function",
 		Subcommands: []*cli.Command{
 			append.Command(),
-			merge.Command(),
+			replace.Command(),
 		},
 	}
 }

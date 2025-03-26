@@ -2,17 +2,15 @@ package append
 
 import (
 	"errors"
-	"fmt"
 	"io"
 	"net/url"
 	"os"
 
 	"github.com/ClickHouse/ch-go/proto"
 	ice "github.com/agnosticeng/icepq/internal/iceberg"
-	pq "github.com/agnosticeng/icepq/internal/parquet"
 	"github.com/apache/iceberg-go"
+	"github.com/apache/iceberg-go/catalog"
 	"github.com/samber/lo"
-	"github.com/sourcegraph/conc/iter"
 	"github.com/urfave/cli/v2"
 )
 
@@ -60,55 +58,49 @@ func Command() *cli.Command {
 				}
 
 				for i := 0; i < input.Rows(); i++ {
-					location, err := url.Parse(inputTableLocationCol.Row(i))
+					var location, err = url.Parse(inputTableLocationCol.Row(i))
 
 					if err != nil {
 						return err
 					}
 
-					files, err := iter.MapErr(inputFilesCol.Row(i), func(path *string) (pq.File, error) {
-						fmt.Fprint(os.Stderr, "location", location.String(), "path", location.JoinPath("data", *path))
-
-						return pq.OpenFile(ctx.Context, location.JoinPath("data", *path))
-					})
+					cat, err := ice.NewVersionHintCatalog(location.String())
 
 					if err != nil {
 						return err
 					}
 
-					md, err := ice.FetchLatestMetadata(ctx.Context, location)
+					t, err := cat.LoadTable(ctx.Context, nil, iceberg.Properties{})
 
-					if err != nil {
-						return err
-					}
-
-					if md == nil {
-						schemas, err := iter.MapErr(files, func(f *pq.File) (*iceberg.Schema, error) {
-							return pq.ToIcebergSchema(f.Metadata().Schema)
-						})
+					if errors.Is(err, catalog.ErrNoSuchTable) {
+						sch, err := ice.SchemaFromParquetDataFiles(ctx.Context, location, inputFilesCol.Row(i))
 
 						if err != nil {
 							return err
 						}
 
-						if !lo.EveryBy(schemas, func(sch *iceberg.Schema) bool {
-							return schemas[0].Equals(sch)
-						}) {
-							return fmt.Errorf("not all provided Parquet files have the same schema")
-						}
+						t, err = cat.CreateTable(ctx.Context, nil, sch)
 
-						if err := ice.CreateTable(ctx.Context, location, schemas[0], ice.CreateTableOptions{}); err != nil {
+						if err != nil {
 							return err
 						}
-
-						md, err = ice.FetchLatestMetadata(ctx.Context, location)
-
+					} else {
 						if err != nil {
 							return err
 						}
 					}
 
-					if err := ice.AppendToTable(ctx.Context, md, files, ice.AppendToTableOptions{}); err != nil {
+					var tx = t.NewTransaction()
+
+					if err := tx.AddFiles(
+						lo.Map(inputFilesCol.Row(i), func(path string, _ int) string { return location.JoinPath("data", path).String() }),
+						nil,
+						true,
+					); err != nil {
+						return err
+					}
+
+					if _, err := tx.Commit(ctx.Context); err != nil {
 						return err
 					}
 

@@ -1,16 +1,15 @@
-package merge
+package replace
 
 import (
 	"errors"
-	"fmt"
 	"io"
 	"net/url"
 	"os"
 
 	"github.com/ClickHouse/ch-go/proto"
 	ice "github.com/agnosticeng/icepq/internal/iceberg"
-	pq "github.com/agnosticeng/icepq/internal/parquet"
-	"github.com/sourcegraph/conc/iter"
+	"github.com/apache/iceberg-go"
+	"github.com/samber/lo"
 	"github.com/urfave/cli/v2"
 )
 
@@ -20,18 +19,20 @@ func Flags() []cli.Flag {
 
 func Command() *cli.Command {
 	return &cli.Command{
-		Name:  "merge",
+		Name:  "replace",
 		Flags: Flags(),
 		Action: func(ctx *cli.Context) error {
 			var (
 				buf                   proto.Buffer
 				inputTableLocationCol = new(proto.ColStr)
-				inputMergesCol        = proto.NewArray(proto.NewArray(new(proto.ColStr)))
+				inputInputFilesCol    = proto.NewArray(new(proto.ColStr))
+				inputOutputFilesCol   = proto.NewArray(new(proto.ColStr))
 				outputErrorCol        = new(proto.ColStr)
 
 				input = proto.Results{
 					{Name: "table_location", Data: inputTableLocationCol},
-					{Name: "merges", Data: inputMergesCol},
+					{Name: "input_files", Data: inputInputFilesCol},
+					{Name: "output_files", Data: inputOutputFilesCol},
 				}
 
 				output = proto.Input{
@@ -64,47 +65,34 @@ func Command() *cli.Command {
 						return err
 					}
 
-					var merges = inputMergesCol.Row(i)
+					cat, err := ice.NewVersionHintCatalog(location.String())
 
-					mergeOps, err := iter.MapErr(
-						merges,
-						func(ss *[]string) (ice.MergeOp, error) {
-							if len(*ss) < 3 {
-								return ice.MergeOp{}, fmt.Errorf("invalid merge: %s (must have 1 output and at least 2 inputs)", *ss)
-							}
+					if err != nil {
+						return err
+					}
 
-							output, err := pq.OpenFile(ctx.Context, location.JoinPath("data", (*ss)[0]))
+					t, err := cat.LoadTable(ctx.Context, nil, iceberg.Properties{})
 
-							if err != nil {
-								return ice.MergeOp{}, err
-							}
+					if err != nil {
+						return err
+					}
 
-							inputs, err := iter.MapErr((*ss)[1:], func(s *string) (pq.File, error) {
-								return pq.OpenFile(ctx.Context, location.JoinPath("data", *s))
-							})
-
-							if err != nil {
-								return ice.MergeOp{}, err
-							}
-
-							return ice.MergeOp{
-								Output: output,
-								Inputs: inputs,
-							}, nil
-						},
+					var (
+						inputFiles = lo.Map(inputInputFilesCol.Row(i), func(path string, _ int) string {
+							return location.JoinPath("data", path).String()
+						})
+						outputFiles = lo.Map(inputOutputFilesCol.Row(i), func(path string, _ int) string {
+							return location.JoinPath("data", path).String()
+						})
 					)
 
-					if err != nil {
+					var tx = t.NewTransaction()
+
+					if err := tx.ReplaceDataFiles(inputFiles, outputFiles, nil); err != nil {
 						return err
 					}
 
-					md, err := ice.FetchLatestMetadata(ctx.Context, location)
-
-					if err != nil {
-						return err
-					}
-
-					if err := ice.MergeTable(ctx.Context, md, mergeOps, ice.MergeTableOptions{}); err != nil {
+					if _, err := tx.Commit(ctx.Context); err != nil {
 						return err
 					}
 
@@ -127,7 +115,8 @@ func Command() *cli.Command {
 				proto.Reset(
 					&buf,
 					inputTableLocationCol,
-					inputMergesCol,
+					inputInputFilesCol,
+					inputOutputFilesCol,
 					outputErrorCol,
 				)
 			}

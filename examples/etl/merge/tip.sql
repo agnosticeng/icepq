@@ -1,1 +1,0 @@
-select count(*) from iceberg_table_merge_candidates

@@ -2,6 +2,8 @@ package io
 
 import (
 	"context"
+	"errors"
+	stdio "io"
 	"io/fs"
 	"net/url"
 	"path/filepath"
@@ -9,20 +11,21 @@ import (
 
 	"github.com/agnosticeng/objstr"
 	"github.com/agnosticeng/objstr/types"
+	"github.com/agnosticeng/objstr/utils"
 	"github.com/apache/iceberg-go/io"
 )
 
-var _ io.IO = &ObjectStorageAdapter{}
+var _ io.WriteFileIO = &ObjectStoreIO{}
 
-type ObjectStorageAdapter struct {
+type ObjectStoreIO struct {
 	os *objstr.ObjectStore
 }
 
-func NewObjectStorageAdapter(os *objstr.ObjectStore) *ObjectStorageAdapter {
-	return &ObjectStorageAdapter{os: os}
+func NewObjectStoreIO(os *objstr.ObjectStore) *ObjectStoreIO {
+	return &ObjectStoreIO{os: os}
 }
 
-func (ad *ObjectStorageAdapter) Remove(name string) error {
+func (ad *ObjectStoreIO) Remove(name string) error {
 	u, err := url.Parse(name)
 
 	if err != nil {
@@ -32,7 +35,7 @@ func (ad *ObjectStorageAdapter) Remove(name string) error {
 	return ad.os.Delete(context.Background(), u)
 }
 
-func (ad *ObjectStorageAdapter) Open(name string) (io.File, error) {
+func (ad *ObjectStoreIO) Open(name string) (io.File, error) {
 	u, err := url.Parse(name)
 
 	if err != nil {
@@ -59,9 +62,59 @@ func (ad *ObjectStorageAdapter) Open(name string) (io.File, error) {
 	}, nil
 }
 
+func (ad *ObjectStoreIO) Create(name string) (io.FileWriter, error) {
+	u, err := url.Parse(name)
+
+	if err != nil {
+		return nil, err
+	}
+
+	w, err := ad.os.Writer(context.Background(), u)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return fileWriterAdapter{Writer: w}, nil
+}
+
+func (ad *ObjectStoreIO) WriteFile(name string, p []byte) error {
+	u, err := url.Parse(name)
+
+	if err != nil {
+		return err
+	}
+
+	return utils.CreateObject(context.Background(), ad.os, u, p)
+}
+
+type fileWriterAdapter struct {
+	types.Writer
+}
+
+func (fwa fileWriterAdapter) ReadFrom(r stdio.Reader) (n int64, err error) {
+	var total int
+
+	for {
+		var buf = make([]byte, 32*1024)
+		n, err := r.Read(buf)
+
+		if errors.Is(err, stdio.EOF) {
+			return int64(total), nil
+		}
+
+		n, err = fwa.Write(buf[:n])
+		total += n
+
+		if err != nil {
+			return int64(total), err
+		}
+	}
+}
+
 type fileAdapter struct {
 	*ReadSeekerAdapter
-	ad   *ObjectStorageAdapter
+	ad   *ObjectStoreIO
 	path *url.URL
 	md   *types.ObjectMetadata
 }

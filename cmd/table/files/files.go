@@ -6,8 +6,8 @@ import (
 	"net/url"
 
 	ice "github.com/agnosticeng/icepq/internal/iceberg"
-	"github.com/apache/iceberg-go/table"
-	"github.com/samber/lo"
+	"github.com/agnosticeng/icepq/internal/io"
+	"github.com/agnosticeng/objstr"
 	"github.com/sourcegraph/conc/iter"
 	"github.com/urfave/cli/v2"
 	slogctx "github.com/veqryn/slog-context"
@@ -15,19 +15,22 @@ import (
 )
 
 type snapshotInfo struct {
+	MetadataPath   string
 	SequenceNumber int64
 	SnapshotId     int64
-	Path           string
+	SnapshotPath   string
 	Manifests      []manifestInfo
 }
 
 type manifestInfo struct {
 	Path      string
+	Content   string
 	DataFiles []dataFileInfo
 }
 
 type dataFileInfo struct {
-	Path string
+	Path   string
+	Status int
 }
 
 func Command() *cli.Command {
@@ -35,7 +38,11 @@ func Command() *cli.Command {
 		Name:  "files",
 		Usage: "files <location>",
 		Action: func(ctx *cli.Context) error {
-			var logger = slogctx.FromCtx(ctx.Context)
+			var (
+				logger = slogctx.FromCtx(ctx.Context)
+				os     = objstr.FromContextOrDefault(ctx.Context)
+				io     = io.NewObjectStoreIO(os)
+			)
 
 			location, err := url.Parse(ctx.Args().Get(0))
 
@@ -43,7 +50,7 @@ func Command() *cli.Command {
 				return err
 			}
 
-			mds, err := ice.FetchAllMetadata(ctx.Context, location)
+			mds, err := ice.FetchAllMetadataFiles(ctx.Context, location)
 
 			if err != nil {
 				return err
@@ -51,11 +58,11 @@ func Command() *cli.Command {
 
 			logger.Debug("metadata listing finished", "count", len(mds))
 
-			var m = iter.Mapper[table.Metadata, *snapshotInfo]{
+			var m = iter.Mapper[*ice.MetadataFile, *snapshotInfo]{
 				MaxGoroutines: 100,
 			}
 
-			res, err := m.MapErr(mds, func(md *table.Metadata) (*snapshotInfo, error) {
+			res, err := m.MapErr(mds, func(md **ice.MetadataFile) (*snapshotInfo, error) {
 				var snap = (*md).CurrentSnapshot()
 
 				if snap == nil {
@@ -63,12 +70,13 @@ func Command() *cli.Command {
 				}
 
 				var snapInfo = snapshotInfo{
-					Path:           snap.ManifestList,
+					MetadataPath:   (*md).Path,
+					SnapshotPath:   snap.ManifestList,
 					SequenceNumber: snap.SequenceNumber,
 					SnapshotId:     snap.SnapshotID,
 				}
 
-				manFiles, err := ice.FetchManifestsWithEntries(ctx.Context, lo.Must(url.Parse(snap.ManifestList)))
+				manFiles, err := snap.Manifests(io)
 
 				if err != nil {
 					return nil, err
@@ -76,19 +84,26 @@ func Command() *cli.Command {
 
 				for _, manFile := range manFiles {
 					var manInfo = manifestInfo{
-						Path: manFile.Manifest.FilePath(),
+						Path:    manFile.FilePath(),
+						Content: manFile.ManifestContent().String(),
 					}
 
-					for _, entry := range manFile.Entries {
+					entries, err := manFile.FetchEntries(io, false)
+
+					if err != nil {
+						return nil, err
+					}
+
+					for _, entry := range entries {
 						manInfo.DataFiles = append(manInfo.DataFiles, dataFileInfo{
-							Path: entry.DataFile().FilePath(),
+							Path:   entry.DataFile().FilePath(),
+							Status: int(entry.Status()),
 						})
 					}
 
 					snapInfo.Manifests = append(snapInfo.Manifests, manInfo)
 				}
 
-				fmt.Println("snap", snapInfo.Path)
 				return &snapInfo, nil
 			})
 

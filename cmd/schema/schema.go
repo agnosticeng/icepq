@@ -1,11 +1,10 @@
 package schema
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/url"
 
-	pq "github.com/agnosticeng/icepq/internal/parquet"
+	ice "github.com/agnosticeng/icepq/internal/iceberg"
 	"github.com/urfave/cli/v2"
 )
 
@@ -20,26 +19,14 @@ func Command() *cli.Command {
 				return err
 			}
 
-			f, err := pq.OpenFile(ctx.Context, u)
-
-			js, _ := json.MarshalIndent(f.Metadata().Schema, "", "    ")
-			fmt.Println("PARQUET SCHEMA", string(js))
-
-			sch, err := pq.ToIcebergSchema(f.Metadata().Schema)
+			sch, err := ice.SchemaFromParquetFile(ctx.Context, u)
 
 			if err != nil {
 				return err
 			}
 
-			fmt.Println("ICEBERG SCHEMA", sch.String())
-
-			js, err = json.MarshalIndent(sch, "", "   ")
-
-			if err != nil {
-				return err
-			}
-
-			fmt.Println("ICEBERG SCHEMA (JSON)", string(js))
+			fmt.Println()
+			fmt.Println(sch)
 
 			return nil
 		},
