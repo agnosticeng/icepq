@@ -7,7 +7,7 @@ require (
 	github.com/ClickHouse/clickhouse-go/v2 v2.33.1
 	github.com/agnosticeng/cliutils v0.1.0
 	github.com/agnosticeng/cnf v0.1.0
-	github.com/agnosticeng/objstr v0.1.6
+	github.com/agnosticeng/objstr v0.2.0
 	github.com/agnosticeng/panicsafe v0.5.0
 	github.com/agnosticeng/slogcli v0.1.1
 	github.com/apache/arrow-go/v18 v18.2.0
@@ -191,7 +191,7 @@ require (
 	golang.org/x/crypto v0.36.0 // indirect
 	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394 // indirect
 	golang.org/x/mod v0.24.0 // indirect
-	golang.org/x/net v0.37.0 // indirect
+	golang.org/x/net v0.38.0 // indirect
 	golang.org/x/oauth2 v0.28.0 // indirect
 	golang.org/x/sync v0.12.0 // indirect
 	golang.org/x/sys v0.31.0 // indirect
