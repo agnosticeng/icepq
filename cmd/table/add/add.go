@@ -2,7 +2,6 @@ package add
 
 import (
 	"errors"
-	"fmt"
 	"net/url"
 
 	ice "github.com/agnosticeng/icepq/internal/iceberg"
@@ -19,11 +18,10 @@ func Command() *cli.Command {
 			&cli.StringSliceFlag{Name: "prop"},
 		},
 		Action: func(ctx *cli.Context) error {
-			var props = ice.ParseProperties(ctx.StringSlice("prop"))
-
-			fmt.Println(props)
-
-			location, err := url.Parse(ctx.Args().Get(0))
+			var (
+				props         = ice.ParseProperties(ctx.StringSlice("prop"))
+				location, err = url.Parse(ctx.Args().Get(0))
+			)
 
 			if err != nil {
 				return err

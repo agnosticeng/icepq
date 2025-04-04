@@ -15,4 +15,3 @@ if __name__ == '__main__':
     """).show()
     
     conn.sql("select count(*) from iceberg_scan('s3://test01/table01', version_name_format='%s')").show()
-

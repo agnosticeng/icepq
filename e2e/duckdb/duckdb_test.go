@@ -42,7 +42,7 @@ func TestSelect(t *testing.T) {
 			settings s3_create_new_file_on_insert=true
 		`))
 		require.NoError(t, conn.Exec(ctx, `
-			select icepq_append('s3://test/test_01', [
+			select icepq_add('s3://test/test_01', [
 				'0.parquet',
 				'1.parquet',
 				'2.parquet',

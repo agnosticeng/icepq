@@ -37,6 +37,10 @@ func Command() *cli.Command {
 	return &cli.Command{
 		Name:  "files",
 		Usage: "files <location>",
+		Flags: []cli.Flag{
+			&cli.BoolFlag{Name: "all"},
+			&cli.BoolFlag{Name: "compact"},
+		},
 		Action: func(ctx *cli.Context) error {
 			var (
 				logger = slogctx.FromCtx(ctx.Context)
@@ -50,7 +54,27 @@ func Command() *cli.Command {
 				return err
 			}
 
-			mds, err := ice.FetchAllMetadataFiles(ctx.Context, location)
+			var mds []*ice.MetadataFile
+
+			if !ctx.Bool("all") {
+				cat, err := ice.NewVersionHintCatalog(location.String())
+
+				if err != nil {
+					return err
+				}
+
+				t, err := cat.LoadTable(ctx.Context, nil, nil)
+
+				if err != nil {
+					return err
+				}
+
+				mds = append(mds, &ice.MetadataFile{
+					Metadata: t.Metadata(),
+				})
+			} else {
+				mds, err = ice.FetchAllMetadataFiles(ctx.Context, location)
+			}
 
 			if err != nil {
 				return err
@@ -107,8 +131,19 @@ func Command() *cli.Command {
 				return &snapInfo, nil
 			})
 
-			js, _ := json.MarshalIndent(res, "", "    ")
-			fmt.Println(string(js))
+			if ctx.Bool("compact") {
+				for _, snapInfo := range res {
+					for _, manInfo := range snapInfo.Manifests {
+						for _, dataFileInfo := range manInfo.DataFiles {
+							fmt.Println(dataFileInfo.Path)
+						}
+					}
+				}
+			} else {
+				js, _ := json.MarshalIndent(res, "", "    ")
+				fmt.Println(string(js))
+			}
+
 			return nil
 		},
 	}
