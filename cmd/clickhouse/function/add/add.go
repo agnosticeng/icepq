@@ -1,4 +1,4 @@
-package append
+package add
 
 import (
 	"errors"
@@ -20,7 +20,7 @@ func Flags() []cli.Flag {
 
 func Command() *cli.Command {
 	return &cli.Command{
-		Name:  "append",
+		Name:  "add",
 		Flags: Flags(),
 		Action: func(ctx *cli.Context) error {
 			var (
@@ -93,6 +93,7 @@ func Command() *cli.Command {
 					var tx = t.NewTransaction()
 
 					if err := tx.AddFiles(
+						ctx.Context,
 						lo.Map(inputFilesCol.Row(i), func(path string, _ int) string { return location.JoinPath("data", path).String() }),
 						nil,
 						true,

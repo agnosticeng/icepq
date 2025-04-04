@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	ice "github.com/agnosticeng/icepq/internal/iceberg"
-	"github.com/apache/iceberg-go"
 	"github.com/samber/lo"
 	"github.com/urfave/cli/v2"
 )
@@ -15,7 +14,12 @@ func Command() *cli.Command {
 	return &cli.Command{
 		Name:  "replace",
 		Usage: "replace <location>  <input_file_1,input_file_2,...>  <output_file_1,output_file_2>",
+		Flags: []cli.Flag{
+			&cli.StringSliceFlag{Name: "prop"},
+		},
 		Action: func(ctx *cli.Context) error {
+			var props = ice.ParseProperties(ctx.StringSlice("prop"))
+
 			location, err := url.Parse(ctx.Args().Get(0))
 
 			if err != nil {
@@ -28,7 +32,7 @@ func Command() *cli.Command {
 				return err
 			}
 
-			t, err := cat.LoadTable(ctx.Context, nil, iceberg.Properties{})
+			t, err := cat.LoadTable(ctx.Context, nil, props)
 
 			if err != nil {
 				return err
@@ -48,7 +52,7 @@ func Command() *cli.Command {
 
 			var tx = t.NewTransaction()
 
-			if err := tx.ReplaceDataFiles(inputFiles, outputFiles, nil); err != nil {
+			if err := tx.ReplaceDataFiles(ctx.Context, inputFiles, outputFiles, props); err != nil {
 				return err
 			}
 

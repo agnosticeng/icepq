@@ -15,7 +15,11 @@ bundle: build
 	COPYFILE_DISABLE=1 tar --no-xattr -cvzf ${BUNDLE_PATH}/../bundle.tar.gz -C ${BUNDLE_PATH} .
 	
 test:
-	go test -v ./...
+	go test -v $(shell go list ./... | grep -v /e2e)
+
+e2e-test:
+	go test -v ./e2e/...
 
 clean:
 	rm -rf bin
+	rm -rf ${BUNDLE_PATH}/../bundle.tar.gz ${BUNDLE_PATH} ${BUNDLE_PATH}/../bundle.tar.gz

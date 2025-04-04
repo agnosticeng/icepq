@@ -1,11 +1,11 @@
-package append
+package add
 
 import (
 	"errors"
+	"fmt"
 	"net/url"
 
 	ice "github.com/agnosticeng/icepq/internal/iceberg"
-	"github.com/apache/iceberg-go"
 	"github.com/apache/iceberg-go/catalog"
 	"github.com/samber/lo"
 	"github.com/urfave/cli/v2"
@@ -13,9 +13,16 @@ import (
 
 func Command() *cli.Command {
 	return &cli.Command{
-		Name:  "append",
-		Usage: "append <location> <file1> [<file2> ...]",
+		Name:  "add",
+		Usage: "add <location> <file1> [<file2> ...]",
+		Flags: []cli.Flag{
+			&cli.StringSliceFlag{Name: "prop"},
+		},
 		Action: func(ctx *cli.Context) error {
+			var props = ice.ParseProperties(ctx.StringSlice("prop"))
+
+			fmt.Println(props)
+
 			location, err := url.Parse(ctx.Args().Get(0))
 
 			if err != nil {
@@ -34,7 +41,7 @@ func Command() *cli.Command {
 				return err
 			}
 
-			t, err := cat.LoadTable(ctx.Context, nil, iceberg.Properties{})
+			t, err := cat.LoadTable(ctx.Context, nil, props)
 
 			if errors.Is(err, catalog.ErrNoSuchTable) {
 				sch, err := ice.SchemaFromParquetDataFiles(ctx.Context, location, paths)
@@ -43,7 +50,7 @@ func Command() *cli.Command {
 					return err
 				}
 
-				t, err = cat.CreateTable(ctx.Context, nil, sch)
+				t, err = cat.CreateTable(ctx.Context, nil, sch, catalog.WithProperties(props))
 
 				if err != nil {
 					return err
@@ -57,8 +64,9 @@ func Command() *cli.Command {
 			var tx = t.NewTransaction()
 
 			if err := tx.AddFiles(
+				ctx.Context,
 				lo.Map(paths, func(path string, _ int) string { return location.JoinPath("data", path).String() }),
-				nil,
+				props,
 				true,
 			); err != nil {
 				return err

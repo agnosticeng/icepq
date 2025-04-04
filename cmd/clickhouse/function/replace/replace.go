@@ -88,7 +88,7 @@ func Command() *cli.Command {
 
 					var tx = t.NewTransaction()
 
-					if err := tx.ReplaceDataFiles(inputFiles, outputFiles, nil); err != nil {
+					if err := tx.ReplaceDataFiles(ctx.Context, inputFiles, outputFiles, nil); err != nil {
 						return err
 					}
 

@@ -23,9 +23,9 @@ settings s3_create_new_file_on_insert=true
 
 ;;
 
--- append_parquet_files_to_iceberg_table
+-- add_parquet_files_to_iceberg_table
 
-select icepq_append('s3://test/test_01', [
+select icepq_add('s3://test/test_01', [
     '0.parquet',
     '1.parquet',
     '2.parquet',
