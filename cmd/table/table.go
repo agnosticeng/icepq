@@ -14,6 +14,7 @@ func Command() *cli.Command {
 			add.Command(),
 			files.Command(),
 			replace.Command(),
+			// expire_snapshots.Command(),
 		},
 	}
 }

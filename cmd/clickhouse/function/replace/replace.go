@@ -2,6 +2,7 @@ package replace
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"net/url"
 	"os"
@@ -11,6 +12,7 @@ import (
 	"github.com/apache/iceberg-go"
 	"github.com/samber/lo"
 	"github.com/urfave/cli/v2"
+	slogctx "github.com/veqryn/slog-context"
 )
 
 func Flags() []cli.Flag {
@@ -22,6 +24,12 @@ func Command() *cli.Command {
 		Name:  "replace",
 		Flags: Flags(),
 		Action: func(ctx *cli.Context) error {
+			slogctx.FromCtx(ctx.Context).Info("popopo")
+
+			fmt.Fprintf(os.Stderr, "loooooooooooooooo\n")
+
+			fmt.Fprintln(os.Stderr, "cocococ")
+
 			var (
 				buf                   proto.Buffer
 				inputTableLocationCol = new(proto.ColStr)
@@ -40,6 +48,8 @@ func Command() *cli.Command {
 				}
 			)
 
+			fmt.Fprintln(os.Stderr, "begin")
+
 			for {
 				var (
 					inputBlock proto.Block
@@ -50,6 +60,8 @@ func Command() *cli.Command {
 					)
 				)
 
+				fmt.Fprintln(os.Stderr, "read")
+
 				if errors.Is(err, io.EOF) {
 					return nil
 				}
@@ -59,17 +71,23 @@ func Command() *cli.Command {
 				}
 
 				for i := 0; i < input.Rows(); i++ {
+					fmt.Fprintln(os.Stderr, "before parse url")
+
 					location, err := url.Parse(inputTableLocationCol.Row(i))
 
 					if err != nil {
 						return err
 					}
 
+					fmt.Fprintln(os.Stderr, "before new catalog")
+
 					cat, err := ice.NewVersionHintCatalog(location.String())
 
 					if err != nil {
 						return err
 					}
+
+					fmt.Fprintln(os.Stderr, "before load table")
 
 					t, err := cat.LoadTable(ctx.Context, nil, iceberg.Properties{})
 
@@ -86,15 +104,21 @@ func Command() *cli.Command {
 						})
 					)
 
+					fmt.Fprintln(os.Stderr, "before tx")
+
 					var tx = t.NewTransaction()
 
 					if err := tx.ReplaceDataFiles(ctx.Context, inputFiles, outputFiles, nil); err != nil {
 						return err
 					}
 
+					fmt.Fprintln(os.Stderr, "after replace")
+
 					if _, err := tx.Commit(ctx.Context); err != nil {
 						return err
 					}
+
+					fmt.Fprintln(os.Stderr, "after commit")
 
 					outputErrorCol.Append("")
 				}

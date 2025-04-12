@@ -1,3 +1,6 @@
 pyiceberg[pyarrow,sql-sqlite]
+polars[pyiceberg]
 parquet-cli
 duckdb
+fsspec 
+s3fs

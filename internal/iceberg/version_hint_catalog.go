@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"time"
 
 	"github.com/agnosticeng/icepq/internal/io"
 	"github.com/agnosticeng/objstr"
@@ -46,9 +47,14 @@ func (cat *VersionHintCatalog) CreateTable(
 	opts ...catalog.CreateTableOpt,
 ) (*table.Table, error) {
 	var (
+		conf                catalog.CreateTableCfg
 		os                  = objstr.FromContextOrDefault(ctx)
 		versionHintLocation = cat.tableLocation.JoinPath("metadata", "version-hint.text")
 	)
+
+	for _, opt := range opts {
+		opt(&conf)
+	}
 
 	_, err := os.ReadMetadata(ctx, versionHintLocation)
 
@@ -57,6 +63,12 @@ func (cat *VersionHintCatalog) CreateTable(
 	}
 
 	b, err := table.NewMetadataBuilder()
+
+	if err != nil {
+		return nil, err
+	}
+
+	b, err = b.SetProperties(conf.Properties)
 
 	if err != nil {
 		return nil, err
@@ -98,16 +110,21 @@ func (cat *VersionHintCatalog) CreateTable(
 		return nil, err
 	}
 
+	var (
+		mdName = metadataFileName(0)
+		mdLoc  = cat.tableLocation.JoinPath("metadata", mdName)
+	)
+
+	b = b.AppendMetadataLog(table.MetadataLogEntry{
+		MetadataFile: mdLoc.String(),
+		TimestampMs:  time.Now().UnixMilli(),
+	})
+
 	md, err := b.Build()
 
 	if err != nil {
 		return nil, err
 	}
-
-	var (
-		mdName = metadataFileName(0)
-		mdLoc  = cat.tableLocation.JoinPath("metadata", mdName)
-	)
 
 	if err := cat.writeMetadataFile(ctx, os, mdLoc, md); err != nil {
 		return nil, err
