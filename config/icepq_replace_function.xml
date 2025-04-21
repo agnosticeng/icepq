@@ -5,8 +5,8 @@
         <format>Native</format>
         <stderr_reaction>log</stderr_reaction>
         <command>icepq clickhouse function replace</command>
-        <command_read_timeout>180000</command_read_timeout>
-        <command_write_timeout>60000</command_write_timeout>
+        <command_read_timeout>600000</command_read_timeout>
+        <command_write_timeout>600000</command_write_timeout>
 
         <argument>
             <name>table_location</name>
