@@ -1,12 +1,7 @@
 package add
 
 import (
-	"errors"
-	"net/url"
-
 	ice "github.com/agnosticeng/icepq/internal/iceberg"
-	"github.com/apache/iceberg-go/catalog"
-	"github.com/samber/lo"
 	"github.com/urfave/cli/v2"
 )
 
@@ -19,59 +14,23 @@ func Command() *cli.Command {
 		},
 		Action: func(ctx *cli.Context) error {
 			var (
-				props         = ice.ParseProperties(ctx.StringSlice("prop"))
-				location, err = url.Parse(ctx.Args().Get(0))
+				location = ctx.Args().Get(0)
+				files    = ctx.Args().Slice()[1:]
+				props    = ice.ParseProperties(ctx.StringSlice("prop"))
 			)
 
-			if err != nil {
-				return err
-			}
-
-			var paths = ctx.Args().Slice()[1:]
-
-			if len(paths) == 0 {
+			if len(files) == 0 {
 				return nil
 			}
 
-			cat, err := ice.NewVersionHintCatalog(location.String())
-
-			if err != nil {
-				return err
-			}
-
-			t, err := cat.LoadTable(ctx.Context, nil, props)
-
-			if errors.Is(err, catalog.ErrNoSuchTable) {
-				sch, err := ice.SchemaFromParquetDataFiles(ctx.Context, location, paths)
-
-				if err != nil {
-					return err
-				}
-
-				t, err = cat.CreateTable(ctx.Context, nil, sch, catalog.WithProperties(props))
-
-				if err != nil {
-					return err
-				}
-			} else {
-				if err != nil {
-					return err
-				}
-			}
-
-			var tx = t.NewTransaction()
-
-			if err := tx.AddFiles(
-				ctx.Context,
-				lo.Map(paths, func(path string, _ int) string { return location.JoinPath("data", path).String() }),
-				props,
-				true,
-			); err != nil {
-				return err
-			}
-
-			_, err = tx.Commit(ctx.Context)
-			return err
+			return ice.DoCommit(func() error {
+				return ice.CreateOrAddFiles(
+					ctx.Context,
+					location,
+					files,
+					props,
+				)
+			})
 		},
 	}
 }

@@ -14,4 +14,4 @@ if __name__ == '__main__':
         )
     """).show()
 
-    conn.sql("select count(*) from iceberg_scan('s3://test/test_01', version_name_format='%s')").show()
+    conn.sql("select count(*) from iceberg_scan('s3://test/test_01', version_name_format='%s%s')").show()

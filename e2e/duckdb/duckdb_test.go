@@ -72,9 +72,9 @@ func TestSelect(t *testing.T) {
 		require.NoError(t, err)
 		require.NoError(t, pythonContainer.CopyFileToContainer(ctx, requirementsPath, "/requirements.txt", 0x700))
 		require.NoError(t, pythonContainer.CopyFileToContainer(ctx, scriptPath, "/test_select.py", 0x700))
-		common.ExecInContainer(ctx, t, pythonContainer, []string{"pip", "install", "-r", "/requirements.txt"})
 		t.Log("installing requirements")
-		common.ExecInContainer(ctx, t, pythonContainer, []string{"python", "/test_select.py"})
+		common.ExecInContainer(ctx, t, pythonContainer, []string{"pip", "install", "-r", "/requirements.txt"})
 		t.Log("running test script")
+		common.ExecInContainer(ctx, t, pythonContainer, []string{"python", "/test_select.py"})
 	})
 }

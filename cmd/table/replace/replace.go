@@ -19,21 +19,9 @@ func Command() *cli.Command {
 		},
 		Action: func(ctx *cli.Context) error {
 			var (
-				props         = ice.ParseProperties(ctx.StringSlice("prop"))
 				location, err = url.Parse(ctx.Args().Get(0))
+				props         = ice.ParseProperties(ctx.StringSlice("prop"))
 			)
-
-			if err != nil {
-				return err
-			}
-
-			cat, err := ice.NewVersionHintCatalog(location.String())
-
-			if err != nil {
-				return err
-			}
-
-			t, err := cat.LoadTable(ctx.Context, nil, props)
 
 			if err != nil {
 				return err
@@ -51,14 +39,15 @@ func Command() *cli.Command {
 				return err
 			}
 
-			var tx = t.NewTransaction()
-
-			if err := tx.ReplaceDataFiles(ctx.Context, inputFiles, outputFiles, props); err != nil {
-				return err
-			}
-
-			_, err = tx.Commit(ctx.Context)
-			return err
+			return ice.DoCommit(func() error {
+				return ice.ReplaceFiles(
+					ctx.Context,
+					location.String(),
+					inputFiles,
+					outputFiles,
+					props,
+				)
+			})
 		},
 	}
 }

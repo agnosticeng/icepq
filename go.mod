@@ -12,6 +12,7 @@ require (
 	github.com/agnosticeng/slogcli v0.1.1
 	github.com/apache/arrow-go/v18 v18.2.1-0.20250325140533-276892c275de
 	github.com/apache/iceberg-go v0.2.1-0.20250414151147-dbab955114bb
+	github.com/deckarep/golang-set/v2 v2.8.0
 	github.com/google/uuid v1.6.0
 	github.com/hamba/avro/v2 v2.28.0
 	github.com/minio/minio-go/v7 v7.0.88
@@ -21,7 +22,6 @@ require (
 	github.com/testcontainers/testcontainers-go v0.36.0
 	github.com/testcontainers/testcontainers-go/modules/minio v0.36.0
 	github.com/urfave/cli/v2 v2.27.5
-	github.com/veqryn/slog-context v0.7.0
 	gocloud.dev v0.41.0
 )
 
@@ -178,10 +178,11 @@ require (
 	github.com/spiffe/go-spiffe/v2 v2.5.0 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/substrait-io/substrait v0.69.0 // indirect
-	github.com/substrait-io/substrait-go/v3 v3.9.0 // indirect
+	github.com/substrait-io/substrait-go/v3 v3.9.1 // indirect
 	github.com/tklauser/go-sysconf v0.3.12 // indirect
 	github.com/tklauser/numcpus v0.6.1 // indirect
 	github.com/twmb/murmur3 v1.1.8 // indirect
+	github.com/veqryn/slog-context v0.7.0 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1 // indirect

@@ -3,14 +3,11 @@ package add
 import (
 	"errors"
 	"io"
-	"net/url"
 	"os"
 
 	"github.com/ClickHouse/ch-go/proto"
 	ice "github.com/agnosticeng/icepq/internal/iceberg"
 	"github.com/apache/iceberg-go"
-	"github.com/apache/iceberg-go/catalog"
-	"github.com/samber/lo"
 	"github.com/urfave/cli/v2"
 )
 
@@ -58,50 +55,18 @@ func Command() *cli.Command {
 				}
 
 				for i := 0; i < input.Rows(); i++ {
-					var location, err = url.Parse(inputTableLocationCol.Row(i))
+					var err = ice.DoCommit(
+						func() error {
+							return ice.CreateOrAddFiles(
+								ctx.Context,
+								inputTableLocationCol.Row(i),
+								inputFilesCol.Row(i),
+								iceberg.Properties{},
+							)
+						},
+					)
 
 					if err != nil {
-						return err
-					}
-
-					cat, err := ice.NewVersionHintCatalog(location.String())
-
-					if err != nil {
-						return err
-					}
-
-					t, err := cat.LoadTable(ctx.Context, nil, iceberg.Properties{})
-
-					if errors.Is(err, catalog.ErrNoSuchTable) {
-						sch, err := ice.SchemaFromParquetDataFiles(ctx.Context, location, inputFilesCol.Row(i))
-
-						if err != nil {
-							return err
-						}
-
-						t, err = cat.CreateTable(ctx.Context, nil, sch)
-
-						if err != nil {
-							return err
-						}
-					} else {
-						if err != nil {
-							return err
-						}
-					}
-
-					var tx = t.NewTransaction()
-
-					if err := tx.AddFiles(
-						ctx.Context,
-						lo.Map(inputFilesCol.Row(i), func(path string, _ int) string { return location.JoinPath("data", path).String() }),
-						nil,
-						true,
-					); err != nil {
-						return err
-					}
-
-					if _, err := tx.Commit(ctx.Context); err != nil {
 						return err
 					}
 

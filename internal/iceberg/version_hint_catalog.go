@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
-	"time"
+	"path/filepath"
 
 	"github.com/agnosticeng/icepq/internal/io"
 	"github.com/agnosticeng/objstr"
@@ -20,8 +20,8 @@ import (
 )
 
 var (
-	ErrConcurrentCommit                 = errors.New("concurrent commit")
-	_                   table.CatalogIO = &VersionHintCatalog{}
+	ErrConsistencyViolation                 = errors.New("consistency violation")
+	_                       table.CatalogIO = &VersionHintCatalog{}
 )
 
 type VersionHintCatalog struct {
@@ -115,10 +115,13 @@ func (cat *VersionHintCatalog) CreateTable(
 		mdLoc  = cat.tableLocation.JoinPath("metadata", mdName)
 	)
 
-	b = b.AppendMetadataLog(table.MetadataLogEntry{
-		MetadataFile: mdLoc.String(),
-		TimestampMs:  time.Now().UnixMilli(),
-	})
+	// don't know how to add proper log entries at commit time
+	// so I "disable" it
+	//
+	// b = b.AppendMetadataLog(table.MetadataLogEntry{
+	// 	MetadataFile: mdLoc.String(),
+	// 	TimestampMs:  time.Now().UnixMilli(),
+	// })
 
 	md, err := b.Build()
 
@@ -137,7 +140,7 @@ func (cat *VersionHintCatalog) CreateTable(
 	return table.New(
 		[]string{},
 		md,
-		cat.tableLocation.String(),
+		mdLoc.String(),
 		io.NewObjectStoreIO(os),
 		cat,
 	), nil
@@ -146,6 +149,7 @@ func (cat *VersionHintCatalog) CreateTable(
 func (cat *VersionHintCatalog) LoadTable(ctx context.Context, identifier table.Identifier, props iceberg.Properties) (*table.Table, error) {
 	var (
 		os           = objstr.FromContextOrDefault(ctx)
+		io           = io.NewObjectStoreIO(os)
 		content, err = osutils.ReadObject(ctx, os, cat.tableLocation.JoinPath("metadata", "version-hint.text"))
 	)
 
@@ -153,27 +157,12 @@ func (cat *VersionHintCatalog) LoadTable(ctx context.Context, identifier table.I
 		return nil, catalog.ErrNoSuchTable
 	}
 
-	var mdLocation = cat.tableLocation.JoinPath("metadata", string(content))
-
-	mdBytes, err := osutils.ReadObject(ctx, os, mdLocation)
-
-	if err != nil {
-		return nil, err
-	}
-
-	md, err := table.ParseMetadataBytes(mdBytes)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return table.New(
+	return table.NewFromLocation(
 		[]string{},
-		md,
-		cat.tableLocation.String(),
-		io.NewObjectStoreIO(os),
+		cat.tableLocation.JoinPath("metadata", string(content)).String(),
+		io,
 		cat,
-	), nil
+	)
 }
 
 func (cat *VersionHintCatalog) CommitTable(
@@ -218,7 +207,7 @@ func (cat *VersionHintCatalog) CommitTable(
 		return nil, "", err
 	}
 
-	if err := cat.writeVersionHint(ctx, os, "", mdName); err != nil {
+	if err := cat.writeVersionHint(ctx, os, filepath.Base(t.MetadataLocation()), mdName); err != nil {
 		return nil, "", err
 	}
 
@@ -240,7 +229,15 @@ func (cat *VersionHintCatalog) writeMetadataFile(ctx context.Context, os *objstr
 	)
 }
 
-func (cat *VersionHintCatalog) writeVersionHint(ctx context.Context, os *objstr.ObjectStore, expectedContent, newContent string) error {
+// We should be using If-Match here to enforce atomic swap
+// but our current S3-like provider does not supports it, so
+// we fallback to a method that allows a small window of inconsistency.
+func (cat *VersionHintCatalog) writeVersionHint(
+	ctx context.Context,
+	os *objstr.ObjectStore,
+	expectedContent,
+	newContent string,
+) error {
 	var versionHintLocation = cat.tableLocation.JoinPath("metadata", "version-hint.text")
 
 	if len(expectedContent) != 0 {
@@ -251,7 +248,7 @@ func (cat *VersionHintCatalog) writeVersionHint(ctx context.Context, os *objstr.
 		}
 
 		if string(actualContent) != expectedContent {
-			return ErrConcurrentCommit
+			return ErrConsistencyViolation
 		}
 	}
 
@@ -260,4 +257,16 @@ func (cat *VersionHintCatalog) writeVersionHint(ctx context.Context, os *objstr.
 
 func metadataFileName(sequenceNumber int64) string {
 	return fmt.Sprintf("%012d-%s.metadata.json", sequenceNumber, uuid.Must(uuid.NewV7()))
+}
+
+func DoCommit(f func() error) error {
+	for {
+		var err = f()
+
+		if err == ErrConsistencyViolation {
+			continue
+		}
+
+		return err
+	}
 }

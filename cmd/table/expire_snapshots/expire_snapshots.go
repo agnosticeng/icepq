@@ -2,9 +2,9 @@ package expire_snapshots
 
 // import (
 // 	"net/url"
-// 	"time"
 
 // 	ice "github.com/agnosticeng/icepq/internal/iceberg"
+// 	"github.com/apache/iceberg-go/table"
 // 	"github.com/urfave/cli/v2"
 // )
 
@@ -15,13 +15,13 @@ package expire_snapshots
 // 		Flags: []cli.Flag{
 // 			&cli.StringSliceFlag{Name: "prop"},
 // 			&cli.IntFlag{Name: "retain-last"},
-// 			&cli.TimestampFlag{Name: "older-than", Layout: time.RFC3339},
+// 			&cli.DurationFlag{Name: "older-than"},
 // 		},
 // 		Action: func(ctx *cli.Context) error {
 // 			var (
 // 				props         = ice.ParseProperties(ctx.StringSlice("prop"))
 // 				location, err = url.Parse(ctx.Args().Get(0))
-// 				olderThan     = ctx.Timestamp("older-than")
+// 				olderThan     = ctx.Duration("older-than")
 // 				retainLast    = ctx.Int("retain-last")
 // 			)
 
@@ -41,9 +41,20 @@ package expire_snapshots
 // 				return err
 // 			}
 
-// 			var tx = t.NewTransaction()
+// 			var (
+// 				tx   = t.NewTransaction()
+// 				opts []table.ExpireSnapshotsOpt
+// 			)
 
-// 			if err := tx.ExpireSnapshots(&retainLast, olderThan); err != nil {
+// 			if olderThan > 0 {
+// 				opts = append(opts, table.WithOlderThan(olderThan))
+// 			}
+
+// 			if retainLast > 0 {
+// 				opts = append(opts, table.WithRetainLast(retainLast))
+// 			}
+
+// 			if err := tx.ExpireSnapshots(opts...); err != nil {
 // 				return err
 // 			}
 

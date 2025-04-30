@@ -3,13 +3,11 @@ package replace
 import (
 	"errors"
 	"io"
-	"net/url"
 	"os"
 
 	"github.com/ClickHouse/ch-go/proto"
 	ice "github.com/agnosticeng/icepq/internal/iceberg"
 	"github.com/apache/iceberg-go"
-	"github.com/samber/lo"
 	"github.com/urfave/cli/v2"
 )
 
@@ -59,40 +57,17 @@ func Command() *cli.Command {
 				}
 
 				for i := 0; i < input.Rows(); i++ {
-					location, err := url.Parse(inputTableLocationCol.Row(i))
+					var err = ice.DoCommit(func() error {
+						return ice.ReplaceFiles(
+							ctx.Context,
+							inputTableLocationCol.Row(i),
+							inputInputFilesCol.Row(i),
+							inputOutputFilesCol.Row(i),
+							iceberg.Properties{},
+						)
+					})
 
 					if err != nil {
-						return err
-					}
-
-					cat, err := ice.NewVersionHintCatalog(location.String())
-
-					if err != nil {
-						return err
-					}
-
-					t, err := cat.LoadTable(ctx.Context, nil, iceberg.Properties{})
-
-					if err != nil {
-						return err
-					}
-
-					var (
-						inputFiles = lo.Map(inputInputFilesCol.Row(i), func(path string, _ int) string {
-							return location.JoinPath("data", path).String()
-						})
-						outputFiles = lo.Map(inputOutputFilesCol.Row(i), func(path string, _ int) string {
-							return location.JoinPath("data", path).String()
-						})
-					)
-
-					var tx = t.NewTransaction()
-
-					if err := tx.ReplaceDataFiles(ctx.Context, inputFiles, outputFiles, nil); err != nil {
-						return err
-					}
-
-					if _, err := tx.Commit(ctx.Context); err != nil {
 						return err
 					}
 
