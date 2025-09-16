@@ -1,4 +1,4 @@
-package replace
+package replace_files
 
 import (
 	"fmt"
@@ -12,8 +12,8 @@ import (
 
 func Command() *cli.Command {
 	return &cli.Command{
-		Name:  "replace",
-		Usage: "replace <location>  <input_file_1,input_file_2,...>  <output_file_1,output_file_2>",
+		Name:  "replace-files",
+		Usage: "<location>  <input_file_1,input_file_2,...>  <output_file_1,output_file_2>",
 		Flags: []cli.Flag{
 			&cli.StringSliceFlag{Name: "prop"},
 		},
@@ -53,11 +53,11 @@ func Command() *cli.Command {
 }
 
 func toDataFileURLs(location *url.URL, s string) ([]string, error) {
-	var files = strings.Split(s, ",")
+	var files = lo.Compact(strings.Split(s, ","))
 
 	if len(files) < 1 {
 		return nil, fmt.Errorf("files list must have at least 1 item")
 	}
 
-	return lo.Map(files, func(file string, _ int) string { return location.JoinPath("data", file).String() }), nil
+	return files, nil
 }

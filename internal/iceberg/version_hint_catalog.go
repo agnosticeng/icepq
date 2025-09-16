@@ -8,13 +8,14 @@ import (
 	"net/url"
 	"path/filepath"
 
-	"github.com/agnosticeng/icepq/internal/io"
+	iceio "github.com/agnosticeng/icepq/internal/io"
 	"github.com/agnosticeng/objstr"
 	objstrerrs "github.com/agnosticeng/objstr/errors"
 	"github.com/agnosticeng/objstr/utils"
 	osutils "github.com/agnosticeng/objstr/utils"
 	"github.com/apache/iceberg-go"
 	"github.com/apache/iceberg-go/catalog"
+	"github.com/apache/iceberg-go/io"
 	"github.com/apache/iceberg-go/table"
 	"github.com/google/uuid"
 )
@@ -86,7 +87,7 @@ func (cat *VersionHintCatalog) CreateTable(
 		return nil, err
 	}
 
-	b, err = b.AddSchema(schema, schema.HighestFieldID(), true)
+	b, err = b.AddSchema(schema)
 
 	if err != nil {
 		return nil, err
@@ -141,7 +142,9 @@ func (cat *VersionHintCatalog) CreateTable(
 		[]string{},
 		md,
 		mdLoc.String(),
-		io.NewObjectStoreIO(os),
+		func(ctx context.Context) (io.IO, error) {
+			return iceio.NewObjectStoreIO(os), nil
+		},
 		cat,
 	), nil
 }
@@ -149,7 +152,7 @@ func (cat *VersionHintCatalog) CreateTable(
 func (cat *VersionHintCatalog) LoadTable(ctx context.Context, identifier table.Identifier, props iceberg.Properties) (*table.Table, error) {
 	var (
 		os           = objstr.FromContextOrDefault(ctx)
-		io           = io.NewObjectStoreIO(os)
+		osio         = iceio.NewObjectStoreIO(os)
 		content, err = osutils.ReadObject(ctx, os, cat.tableLocation.JoinPath("metadata", "version-hint.text"))
 	)
 
@@ -158,9 +161,12 @@ func (cat *VersionHintCatalog) LoadTable(ctx context.Context, identifier table.I
 	}
 
 	return table.NewFromLocation(
+		ctx,
 		[]string{},
 		cat.tableLocation.JoinPath("metadata", string(content)).String(),
-		io,
+		func(ctx context.Context) (io.IO, error) {
+			return osio, nil
+		},
 		cat,
 	)
 }

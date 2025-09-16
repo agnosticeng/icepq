@@ -1,0 +1,22 @@
+<functions>
+    <function>
+        <name>icepq_field_bound_values</name>
+        <type>executable</type>
+        <format>Native</format>
+        <stderr_reaction>log</stderr_reaction>
+        <command>icepq clickhouse function field-bound-values</command>
+        <command_read_timeout>600000</command_read_timeout>
+        <command_write_timeout>600000</command_write_timeout>
+
+        <argument>
+            <name>table_location</name>
+            <type>String</type>
+        </argument>
+        <argument>
+            <name>field_name</name>
+            <type>String</type>
+        </argument>
+
+        <return_type>Array(JSON)</return_type>
+    </function>
+</functions>

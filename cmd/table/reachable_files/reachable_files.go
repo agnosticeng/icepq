@@ -6,6 +6,7 @@ import (
 	ice "github.com/agnosticeng/icepq/internal/iceberg"
 	"github.com/agnosticeng/icepq/internal/io"
 	"github.com/agnosticeng/objstr"
+	"github.com/apache/iceberg-go"
 	"github.com/apache/iceberg-go/table"
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/sourcegraph/conc/iter"
@@ -16,17 +17,18 @@ import (
 func Command() *cli.Command {
 	return &cli.Command{
 		Name:  "reachable-files",
-		Usage: "reachable-files <location>",
+		Usage: "<location>",
 		Flags: []cli.Flag{
 			&cli.BoolFlag{Name: "all-snapshots"},
 			&cli.BoolFlag{Name: "data-only"},
 		},
 		Action: func(ctx *cli.Context) error {
 			var (
-				os           = objstr.FromContextOrDefault(ctx.Context)
-				io           = io.NewObjectStoreIO(os)
-				allSnapshots = ctx.Bool("ll-snapshots")
-				dataOnly     = ctx.Bool("data-only")
+				os             = objstr.FromContextOrDefault(ctx.Context)
+				io             = io.NewObjectStoreIO(os)
+				allSnapshots   = ctx.Bool("all-snapshots")
+				dataOnly       = ctx.Bool("data-only")
+				includeDeleted = ctx.Bool("include-deleted")
 			)
 
 			cat, err := ice.NewVersionHintCatalog(ctx.Args().Get(0))
@@ -66,6 +68,10 @@ func Command() *cli.Command {
 				}
 
 				for _, man := range mans {
+					if (man.ManifestContent() == iceberg.ManifestContentDeletes) && !includeDeleted {
+						continue
+					}
+
 					if !dataOnly {
 						files.Append(man.FilePath())
 					}

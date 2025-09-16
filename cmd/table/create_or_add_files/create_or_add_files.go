@@ -1,4 +1,4 @@
-package add
+package create_or_add_files
 
 import (
 	ice "github.com/agnosticeng/icepq/internal/iceberg"
@@ -7,8 +7,8 @@ import (
 
 func Command() *cli.Command {
 	return &cli.Command{
-		Name:  "add",
-		Usage: "add <location> <file1> [<file2> ...]",
+		Name:  "create-or-add-files",
+		Usage: "<location> <file1> [<file2> ...]",
 		Flags: []cli.Flag{
 			&cli.StringSliceFlag{Name: "prop"},
 		},

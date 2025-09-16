@@ -2,7 +2,12 @@ import duckdb
 
 if __name__ == '__main__':
     conn = duckdb.connect()
-    conn.install_extension("iceberg")
+    conn.sql("""
+        force install iceberg from core_nightly
+    """)
+    conn.sql("""
+        update extensions
+    """)
     conn.sql("""
         create or replace secret secret (
             type s3, 
