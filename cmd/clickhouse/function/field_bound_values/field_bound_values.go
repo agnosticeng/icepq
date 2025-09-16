@@ -8,6 +8,7 @@ import (
 
 	"github.com/ClickHouse/ch-go/proto"
 	ice "github.com/agnosticeng/icepq/internal/iceberg"
+	"github.com/samber/lo"
 	"github.com/sourcegraph/conc/iter"
 	"github.com/urfave/cli/v2"
 )
@@ -25,7 +26,7 @@ func Command() *cli.Command {
 				buf                   proto.Buffer
 				inputTableLocationCol = new(proto.ColStr)
 				inputFieldNameCol     = new(proto.ColStr)
-				outputResultCol       = new(proto.ColStr).Array()
+				outputResultCol       = new(proto.ColBytes)
 
 				input = proto.Results{
 					{Name: "table_location", Data: inputTableLocationCol},
@@ -67,22 +68,30 @@ func Command() *cli.Command {
 					)
 
 					if err != nil {
-						return err
+						outputResultCol.Append(lo.Must(json.Marshal(map[string]any{
+							"error": err.Error(),
+						})))
+						continue
 					}
 
-					res, err := iter.MapErr(values, func(item *ice.FieldBoundValuesItem) (string, error) {
+					res, err := iter.MapErr(values, func(item *ice.FieldBoundValuesItem) (json.RawMessage, error) {
 						js, err := json.Marshal(item)
 						if err != nil {
-							return "", err
+							return nil, err
 						}
-						return string(js), nil
+						return js, nil
 					})
 
 					if err != nil {
-						return err
+						outputResultCol.Append(lo.Must(json.Marshal(map[string]any{
+							"error": err.Error(),
+						})))
+						continue
 					}
 
-					outputResultCol.Append(res)
+					outputResultCol.Append(lo.Must(json.Marshal(map[string]any{
+						"value": res,
+					})))
 				}
 
 				var outputblock = proto.Block{

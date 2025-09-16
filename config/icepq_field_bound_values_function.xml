@@ -17,6 +17,6 @@
             <type>String</type>
         </argument>
 
-        <return_type>Array(JSON)</return_type>
+        <return_type>JSON</return_type>
     </function>
 </functions>
