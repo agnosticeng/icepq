@@ -27,6 +27,8 @@ func DecodeBoundValue(field iceberg.NestedField, v []byte) (any, error) {
 	}
 
 	switch field.Type {
+	case iceberg.Int32Type{}:
+		return int64(binary.LittleEndian.Uint32(v)), nil
 	case iceberg.Int64Type{}:
 		return int64(binary.LittleEndian.Uint64(v)), nil
 	default:
