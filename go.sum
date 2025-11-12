@@ -98,8 +98,6 @@ github.com/agnosticeng/dynamap v0.1.2 h1:9+QnNAgE3vm0bUqqwsV1r33iGCh/9eN8hR442Hk
 github.com/agnosticeng/dynamap v0.1.2/go.mod h1:DBq9RNSJWih2O0WAcbUt5lPRoiEsSxO/lBdjFNHCV+0=
 github.com/agnosticeng/mapstructure-hooks v0.3.0 h1:/zlwNYeGvTb9wQKVStwkRQqdbk125++qASi51i+63mA=
 github.com/agnosticeng/mapstructure-hooks v0.3.0/go.mod h1:1cGQohJ+hwNOlgb231xY4AEfK9RNN4Dg9rKkSEDN0u0=
-github.com/agnosticeng/objstr v0.5.1 h1:7TTBx0S/zONVHyHDjYclETCBzVkTDCQBVItjX+vezbk=
-github.com/agnosticeng/objstr v0.5.1/go.mod h1:rhIh+8Alr9gGyaoFG2tk+SpO44K07ujKgYZTu9903Ok=
 github.com/agnosticeng/panicsafe v0.5.0 h1:rStbOzyOQ4I0fSXElcq1zX81XyxHvQQoNxD0XZl/6/k=
 github.com/agnosticeng/panicsafe v0.5.0/go.mod h1:dXWabTdUv+kz5D/Uj+SHc3C6H6O/XpnLStkrRalYxZk=
 github.com/agnosticeng/slogcli v0.1.1 h1:rS0jde4Ha3GafF7Ww25YQANqQDz9QnIYZ1M5ngnM8Vk=
@@ -305,8 +303,8 @@ github.com/go-openapi/jsonreference v0.20.2 h1:3sVjiK66+uXK/6oQ8xgcRKcFgQ5KXa2Kv
 github.com/go-openapi/jsonreference v0.20.2/go.mod h1:Bl1zwGIM8/wsvqjsOQLJ/SH+En5Ap4rVB5KVcIDZG2k=
 github.com/go-openapi/swag v0.22.4 h1:QLMzNJnMGPRNDCbySlcj1x01tzU8/9LTTL9hZZZogBU=
 github.com/go-openapi/swag v0.22.4/go.mod h1:UzaqsxGiab7freDnrUUra0MwWfN/q7tE4j+VcZ0yl14=
-github.com/go-viper/mapstructure/v2 v2.3.0 h1:27XbWsHIqhbdR5TIC911OfYvgSaW93HM+dX7970Q7jk=
-github.com/go-viper/mapstructure/v2 v2.3.0/go.mod h1:oJDH3BJKyqBA2TXFhDsKDGDTlndYOZ6rGS0BRZIxGhM=
+github.com/go-viper/mapstructure/v2 v2.4.0 h1:EBsztssimR/CONLSZZ04E8qAkxNYq4Qp9LvH92wZUgs=
+github.com/go-viper/mapstructure/v2 v2.4.0/go.mod h1:oJDH3BJKyqBA2TXFhDsKDGDTlndYOZ6rGS0BRZIxGhM=
 github.com/goccy/go-json v0.10.5 h1:Fq85nIqj+gXn/S5ahsiTlK3TmC85qgirsdTP/+DeaC4=
 github.com/goccy/go-json v0.10.5/go.mod h1:oq7eo15ShAhp70Anwd5lgX2pLfOS3QCiwU/PULtXL6M=
 github.com/goccy/go-yaml v1.17.1 h1:LI34wktB2xEE3ONG/2Ar54+/HJVBriAGJ55PHls4YuY=
@@ -910,6 +908,8 @@ google.golang.org/protobuf v1.27.1/go.mod h1:9q0QmTI4eRPtz6boOQmLYwt+qCgq0jsYwAQ
 google.golang.org/protobuf v1.31.0/go.mod h1:HV8QOd/L58Z+nl8r43ehVNZIU/HEI6OcFqwMG9pJV4I=
 google.golang.org/protobuf v1.36.6 h1:z1NpPI8ku2WgiWnf+t9wTPsn6eP1L7ksHUlkfLvd9xY=
 google.golang.org/protobuf v1.36.6/go.mod h1:jduwjTPXsFjZGTmRluh+L6NjiWu7pchiJ2/5YcXBHnY=
+google.golang.org/protobuf v1.36.10 h1:AYd7cD/uASjIL6Q9LiTjz8JLcrh/88q5UObnmY3aOOE=
+google.golang.org/protobuf v1.36.10/go.mod h1:HTf+CrKn2C3g5S8VImy6tdcUvCska2kB7j23XfzDpco=
 gopkg.in/cenkalti/backoff.v1 v1.1.0 h1:Arh75ttbsvlpVA7WtVpH4u9h6Zl46xuptxqLxPiSo4Y=
 gopkg.in/cenkalti/backoff.v1 v1.1.0/go.mod h1:J6Vskwqd+OMVJl8C33mmtxTBs2gyzfv7UDAkHu8BrjI=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=

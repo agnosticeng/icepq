@@ -7,6 +7,7 @@ import (
 
 	"github.com/ClickHouse/ch-go/proto"
 	ice "github.com/agnosticeng/icepq/internal/iceberg"
+	"github.com/agnosticeng/icepq/internal/utils"
 	"github.com/apache/iceberg-go"
 	"github.com/urfave/cli/v2"
 )
@@ -59,7 +60,7 @@ func Command() *cli.Command {
 				for i := 0; i < input.Rows(); i++ {
 					var err = ice.DoCommit(func() error {
 						return ice.ReplaceFiles(
-							ctx.Context,
+							utils.InjectURLObjectStore(ctx.Context, inputTableLocationCol.Row(i)),
 							inputTableLocationCol.Row(i),
 							inputInputFilesCol.Row(i),
 							inputOutputFilesCol.Row(i),

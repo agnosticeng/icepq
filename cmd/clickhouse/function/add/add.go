@@ -7,6 +7,7 @@ import (
 
 	"github.com/ClickHouse/ch-go/proto"
 	ice "github.com/agnosticeng/icepq/internal/iceberg"
+	"github.com/agnosticeng/icepq/internal/utils"
 	"github.com/apache/iceberg-go"
 	"github.com/urfave/cli/v2"
 )
@@ -58,7 +59,7 @@ func Command() *cli.Command {
 					var err = ice.DoCommit(
 						func() error {
 							return ice.CreateOrAddFiles(
-								ctx.Context,
+								utils.InjectURLObjectStore(ctx.Context, inputTableLocationCol.Row(i)),
 								inputTableLocationCol.Row(i),
 								inputFilesCol.Row(i),
 								iceberg.Properties{},

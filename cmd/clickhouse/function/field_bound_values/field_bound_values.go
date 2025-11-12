@@ -8,6 +8,7 @@ import (
 
 	"github.com/ClickHouse/ch-go/proto"
 	ice "github.com/agnosticeng/icepq/internal/iceberg"
+	"github.com/agnosticeng/icepq/internal/utils"
 	"github.com/samber/lo"
 	"github.com/sourcegraph/conc/iter"
 	"github.com/urfave/cli/v2"
@@ -58,7 +59,7 @@ func Command() *cli.Command {
 
 				for i := 0; i < input.Rows(); i++ {
 					values, err := ice.FieldBoundValues(
-						ctx.Context,
+						utils.InjectURLObjectStore(ctx.Context, inputTableLocationCol.Row(i)),
 						inputTableLocationCol.Row(i),
 						inputFieldNameCol.Row(i),
 						ice.FieldBoundValuesConfig{

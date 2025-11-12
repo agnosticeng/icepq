@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/url"
 	"path/filepath"
+	"strings"
 
 	iceio "github.com/agnosticeng/icepq/internal/io"
 	"github.com/agnosticeng/objstr"
@@ -58,55 +59,46 @@ func (cat *VersionHintCatalog) CreateTable(
 	}
 
 	_, err := os.ReadMetadata(ctx, versionHintLocation)
-
 	if !errors.Is(err, objstrerrs.ErrObjectNotFound) {
 		return nil, catalog.ErrTableAlreadyExists
 	}
 
 	b, err := table.NewMetadataBuilder()
-
 	if err != nil {
 		return nil, err
 	}
 
 	b, err = b.SetProperties(conf.Properties)
-
 	if err != nil {
 		return nil, err
 	}
 
 	b, err = b.SetUUID(uuid.Must(uuid.NewV7()))
-
 	if err != nil {
 		return nil, err
 	}
 
 	b, err = b.SetLoc(cat.tableLocation.String())
-
 	if err != nil {
 		return nil, err
 	}
 
 	b, err = b.AddSchema(schema)
-
 	if err != nil {
 		return nil, err
 	}
 
 	b, err = b.AddPartitionSpec(iceberg.UnpartitionedSpec, true)
-
 	if err != nil {
 		return nil, err
 	}
 
 	b, err = b.AddSortOrder(&table.UnsortedSortOrder, true)
-
 	if err != nil {
 		return nil, err
 	}
 
 	b, err = b.SetFormatVersion(2)
-
 	if err != nil {
 		return nil, err
 	}
@@ -154,16 +146,23 @@ func (cat *VersionHintCatalog) LoadTable(ctx context.Context, identifier table.I
 		os           = objstr.FromContextOrDefault(ctx)
 		osio         = iceio.NewObjectStoreIO(os)
 		content, err = osutils.ReadObject(ctx, os, cat.tableLocation.JoinPath("metadata", "version-hint.text"))
+		mdLoc        string
 	)
 
 	if errors.Is(err, objstrerrs.ErrObjectNotFound) {
 		return nil, catalog.ErrNoSuchTable
 	}
 
+	if strings.Contains(string(content), "/") {
+		mdLoc = cat.tableLocation.JoinPath("metadata", filepath.Base(string(content))).String()
+	} else {
+		mdLoc = cat.tableLocation.JoinPath("metadata", string(content)).String()
+	}
+
 	return table.NewFromLocation(
 		ctx,
 		[]string{},
-		cat.tableLocation.JoinPath("metadata", string(content)).String(),
+		mdLoc,
 		func(ctx context.Context) (io.IO, error) {
 			return osio, nil
 		},
