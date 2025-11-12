@@ -24,3 +24,13 @@ func InjectURLObjectStore(ctx context.Context, s string) context.Context {
 
 	return objstr.NewContext(ctx, os)
 }
+
+func StripURLFragment(s string) string {
+	u, err := url.Parse(s)
+	if err != nil {
+		return s
+	}
+	u.RawFragment = ""
+	u.Fragment = ""
+	return u.String()
+}

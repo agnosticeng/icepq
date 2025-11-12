@@ -19,7 +19,6 @@ func Command() *cli.Command {
 		},
 		Action: func(ctx *cli.Context) error {
 			var (
-				props         = ice.ParseProperties(ctx.StringSlice("prop"))
 				location, err = url.Parse(ctx.Args().Get(0))
 				olderThan     = ctx.Duration("older-than")
 				retainLast    = ctx.Int("retain-last")
@@ -35,7 +34,7 @@ func Command() *cli.Command {
 				return err
 			}
 
-			t, err := cat.LoadTable(ctx.Context, nil, props)
+			t, err := cat.LoadTable(ctx.Context, nil)
 
 			if err != nil {
 				return err

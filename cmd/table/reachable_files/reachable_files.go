@@ -37,7 +37,7 @@ func Command() *cli.Command {
 				return err
 			}
 
-			t, err := cat.LoadTable(ctx.Context, nil, nil)
+			t, err := cat.LoadTable(ctx.Context, nil)
 
 			if err != nil {
 				return err

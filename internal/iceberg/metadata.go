@@ -19,6 +19,8 @@ type MetadataFile struct {
 }
 
 func FetchAllMetadataFiles(ctx context.Context, location *url.URL) ([]*MetadataFile, error) {
+	cleanupURL(location)
+
 	var (
 		os           = objstr.FromContextOrDefault(ctx)
 		metadataPath = location.JoinPath("metadata")

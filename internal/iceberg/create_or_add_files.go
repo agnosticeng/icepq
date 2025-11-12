@@ -3,7 +3,9 @@ package iceberg
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/url"
+	"os"
 
 	"github.com/apache/iceberg-go"
 	"github.com/apache/iceberg-go/catalog"
@@ -17,28 +19,26 @@ func CreateOrAddFiles(
 	props iceberg.Properties,
 ) error {
 	var location, err = url.Parse(tableLocation)
-
 	if err != nil {
 		return err
 	}
+
+	cleanupURL(location)
 
 	cat, err := NewVersionHintCatalog(location.String())
-
 	if err != nil {
 		return err
 	}
 
-	t, err := cat.LoadTable(ctx, nil, props)
+	t, err := cat.LoadTable(ctx, nil)
 
 	if errors.Is(err, catalog.ErrNoSuchTable) {
 		sch, err := SchemaFromParquetDataFiles(ctx, location, inputFiles)
-
 		if err != nil {
 			return err
 		}
 
 		t, err = cat.CreateTable(ctx, nil, sch, catalog.WithProperties(props))
-
 		if err != nil {
 			return err
 		}
@@ -56,6 +56,7 @@ func CreateOrAddFiles(
 		props,
 		true,
 	); err != nil {
+		fmt.Fprintln(os.Stderr, err.Error())
 		return err
 	}
 

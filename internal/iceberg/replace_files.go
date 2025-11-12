@@ -16,19 +16,18 @@ func ReplaceFiles(
 	props iceberg.Properties,
 ) error {
 	location, err := url.Parse(tableLocation)
-
 	if err != nil {
 		return err
 	}
+
+	cleanupURL(location)
 
 	cat, err := NewVersionHintCatalog(location.String())
-
 	if err != nil {
 		return err
 	}
 
-	t, err := cat.LoadTable(ctx, nil, iceberg.Properties{})
-
+	t, err := cat.LoadTable(ctx, nil)
 	if err != nil {
 		return err
 	}

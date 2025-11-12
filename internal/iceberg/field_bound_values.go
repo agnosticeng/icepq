@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/binary"
 	"fmt"
+	"net/url"
 
 	"github.com/agnosticeng/icepq/internal/io"
 	"github.com/agnosticeng/objstr"
@@ -52,12 +53,19 @@ func FieldBoundValues(
 		io = io.NewObjectStoreIO(os)
 	)
 
-	cat, err := NewVersionHintCatalog(tableLocation)
+	var location, err = url.Parse(tableLocation)
 	if err != nil {
 		return nil, err
 	}
 
-	t, err := cat.LoadTable(ctx, nil, nil)
+	cleanupURL(location)
+
+	cat, err := NewVersionHintCatalog(location.String())
+	if err != nil {
+		return nil, err
+	}
+
+	t, err := cat.LoadTable(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -65,6 +73,10 @@ func FieldBoundValues(
 	field, found := t.Schema().FindFieldByName(fieldName)
 	if !found {
 		return nil, fmt.Errorf("field %s not found", fieldName)
+	}
+
+	if t.CurrentSnapshot() == nil {
+		return nil, nil
 	}
 
 	mans, err := t.CurrentSnapshot().Manifests(io)

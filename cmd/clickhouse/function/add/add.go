@@ -60,7 +60,7 @@ func Command() *cli.Command {
 						func() error {
 							return ice.CreateOrAddFiles(
 								utils.InjectURLObjectStore(ctx.Context, inputTableLocationCol.Row(i)),
-								inputTableLocationCol.Row(i),
+								utils.StripURLFragment(inputTableLocationCol.Row(i)),
 								inputFilesCol.Row(i),
 								iceberg.Properties{},
 							)

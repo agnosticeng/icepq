@@ -60,7 +60,7 @@ func Command() *cli.Command {
 				for i := 0; i < input.Rows(); i++ {
 					values, err := ice.FieldBoundValues(
 						utils.InjectURLObjectStore(ctx.Context, inputTableLocationCol.Row(i)),
-						inputTableLocationCol.Row(i),
+						utils.StripURLFragment(inputTableLocationCol.Row(i)),
 						inputFieldNameCol.Row(i),
 						ice.FieldBoundValuesConfig{
 							FailOnDeleteFiles:   true,

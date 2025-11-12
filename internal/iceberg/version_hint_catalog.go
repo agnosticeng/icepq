@@ -28,6 +28,7 @@ var (
 
 type VersionHintCatalog struct {
 	tableLocation *url.URL
+	table         *table.Table
 }
 
 func NewVersionHintCatalog(tableLocation string) (*VersionHintCatalog, error) {
@@ -63,43 +64,44 @@ func (cat *VersionHintCatalog) CreateTable(
 		return nil, catalog.ErrTableAlreadyExists
 	}
 
-	b, err := table.NewMetadataBuilder()
+	b, err := table.NewMetadataBuilder(2)
 	if err != nil {
 		return nil, err
 	}
 
-	b, err = b.SetProperties(conf.Properties)
-	if err != nil {
+	if err := b.SetProperties(conf.Properties); err != nil {
 		return nil, err
 	}
 
-	b, err = b.SetUUID(uuid.Must(uuid.NewV7()))
-	if err != nil {
+	if err := b.SetUUID(uuid.Must(uuid.NewV7())); err != nil {
 		return nil, err
 	}
 
-	b, err = b.SetLoc(cat.tableLocation.String())
-	if err != nil {
+	if err := b.SetLoc(cat.tableLocation.String()); err != nil {
 		return nil, err
 	}
 
-	b, err = b.AddSchema(schema)
-	if err != nil {
+	if err := b.AddSchema(schema); err != nil {
 		return nil, err
 	}
 
-	b, err = b.AddPartitionSpec(iceberg.UnpartitionedSpec, true)
-	if err != nil {
+	if err := b.SetCurrentSchemaID(schema.ID); err != nil {
 		return nil, err
 	}
 
-	b, err = b.AddSortOrder(&table.UnsortedSortOrder, true)
-	if err != nil {
+	if err := b.AddPartitionSpec(iceberg.UnpartitionedSpec, true); err != nil {
 		return nil, err
 	}
 
-	b, err = b.SetFormatVersion(2)
-	if err != nil {
+	if err := b.SetDefaultSpecID(iceberg.UnpartitionedSpec.ID()); err != nil {
+		return nil, err
+	}
+
+	if err := b.AddSortOrder(&table.UnsortedSortOrder); err != nil {
+		return nil, err
+	}
+
+	if err := b.SetDefaultSortOrderID(table.UnsortedSortOrder.OrderID()); err != nil {
 		return nil, err
 	}
 
@@ -130,7 +132,7 @@ func (cat *VersionHintCatalog) CreateTable(
 		return nil, err
 	}
 
-	return table.New(
+	var t = table.New(
 		[]string{},
 		md,
 		mdLoc.String(),
@@ -138,10 +140,13 @@ func (cat *VersionHintCatalog) CreateTable(
 			return iceio.NewObjectStoreIO(os), nil
 		},
 		cat,
-	), nil
+	)
+
+	cat.table = t
+	return t, nil
 }
 
-func (cat *VersionHintCatalog) LoadTable(ctx context.Context, identifier table.Identifier, props iceberg.Properties) (*table.Table, error) {
+func (cat *VersionHintCatalog) LoadTable(ctx context.Context, _ table.Identifier) (*table.Table, error) {
 	var (
 		os           = objstr.FromContextOrDefault(ctx)
 		osio         = iceio.NewObjectStoreIO(os)
@@ -159,7 +164,7 @@ func (cat *VersionHintCatalog) LoadTable(ctx context.Context, identifier table.I
 		mdLoc = cat.tableLocation.JoinPath("metadata", string(content)).String()
 	}
 
-	return table.NewFromLocation(
+	t, err := table.NewFromLocation(
 		ctx,
 		[]string{},
 		mdLoc,
@@ -168,21 +173,28 @@ func (cat *VersionHintCatalog) LoadTable(ctx context.Context, identifier table.I
 		},
 		cat,
 	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	cat.table = t
+	return t, nil
 }
 
 func (cat *VersionHintCatalog) CommitTable(
 	ctx context.Context,
-	t *table.Table,
+	_ table.Identifier,
 	requirements []table.Requirement,
 	updates []table.Update,
 ) (table.Metadata, string, error) {
 	var (
 		os     = objstr.FromContextOrDefault(ctx)
-		b, err = table.MetadataBuilderFromBase(t.Metadata())
+		b, err = table.MetadataBuilderFromBase(cat.table.Metadata(), cat.tableLocation.String())
 	)
 
 	for _, req := range requirements {
-		if err := req.Validate(t.Metadata()); err != nil {
+		if err := req.Validate(cat.table.Metadata()); err != nil {
 			return nil, "", err
 		}
 	}
@@ -212,7 +224,7 @@ func (cat *VersionHintCatalog) CommitTable(
 		return nil, "", err
 	}
 
-	if err := cat.writeVersionHint(ctx, os, filepath.Base(t.MetadataLocation()), mdName); err != nil {
+	if err := cat.writeVersionHint(ctx, os, filepath.Base(cat.table.MetadataLocation()), mdName); err != nil {
 		return nil, "", err
 	}
 

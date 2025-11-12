@@ -61,7 +61,7 @@ func Command() *cli.Command {
 					var err = ice.DoCommit(func() error {
 						return ice.ReplaceFiles(
 							utils.InjectURLObjectStore(ctx.Context, inputTableLocationCol.Row(i)),
-							inputTableLocationCol.Row(i),
+							utils.StripURLFragment(inputTableLocationCol.Row(i)),
 							inputInputFilesCol.Row(i),
 							inputOutputFilesCol.Row(i),
 							iceberg.Properties{},
